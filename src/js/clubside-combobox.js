@@ -1,6 +1,11 @@
 'use strict'
 
 /**
+ * @typedef {Object} ClubsideComboBoxModel
+ * @property {ClubsideComboBoxValue} value - getter/setter pair
+ */
+
+/**
  * @typedef {Object} ClubsideComboBoxValue
  * @property {string|number|null} id
  * @property {string} text
@@ -8,21 +13,15 @@
 
 /**
  * @typedef {Object} ClubsideComboBoxOptions
- * @property {Function} onSearch
- * @property {Function} onResults
- * @property {number} [delay=500]
- * @property {number} [listOffset=0]
- * @property {ClubsideComboBoxValue} [value]
+ * @property {Function} onSearch - function to run to search for matches
+ * @property {Function} onResults - function to format matches for display is listbox
+ * @property {boolean} [showOnEmpty=false] - allow down arrow to show results of empty input
+ * @property {number} [delay=500] - delay after typing stops before running search
+ * @property {number} [listOffset=0] - number of pixels to offset the listbox vertically
+ * @property {boolean} [required=false] - whether the input is required for validation
+ * @property {string} [placeholder] - placeholder for input
+ * @property {ClubsideComboBoxValue} [value] - value of ComboBox
  */
-
-function createModel(initialValue) {
-	let current = initialValue || { id: null, text: '' }
-
-	return {
-		get value() { return current },
-		set value(v) { current = v }
-	}
-}
 
 /**
  * Create a new instance of Clubside ComboBox
@@ -42,7 +41,7 @@ export default function clubsideComboBox(root, options) {
 		throw new Error('ComboBox options must be provided')
 	}
 
-	const { onSearch, onResults, delay = 500, listOffset = 0, value } = options
+	const { onSearch, onResults, showOnEmpty = false, delay = 500, listOffset = 0, required = false, placeholder, value } = options
 
 	if (typeof onSearch !== 'function') {
 		throw new Error('ComboBox requires an onSearch function')
@@ -56,7 +55,6 @@ export default function clubsideComboBox(root, options) {
 
 	root.style.position = 'relative'
 	root.setAttribute('role', 'group')
-	root.setAttribute('aria-owns', listboxId)
 
 	// Create input
 	const input = document.createElement('input')
@@ -67,50 +65,19 @@ export default function clubsideComboBox(root, options) {
 	input.setAttribute('aria-expanded', 'false')
 	input.setAttribute('aria-haspopup', 'listbox')
 	input.setAttribute('aria-controls', listboxId)
-	input.setAttribute('aria-activedescendant', '')
+	if (required) input.setAttribute('required', '')
+	if (placeholder) input.setAttribute('placeholder', placeholder)
 	root.appendChild(input)
 
-	// Measure after layout
+	// Check for input visibility before creatiung clear button
 	const inputRect = input.getBoundingClientRect()
-	const inputHeight = inputRect.height - 8
+	if (inputRect.width === 0 && inputRect.height === 0) {
+		waitForVisibility(input, createClearButton)
+	} else {
+		createClearButton()
+	}
 
-	// Add padding so text doesn't overlap the clear button
-	input.style.paddingRight = `${inputHeight + 8}px`
-
-	// Create clear button
-	const clearButton = document.createElement('button')
-	clearButton.classList.add('cscb-close')
-	clearButton.style.width = `${inputHeight}px`
-	clearButton.style.height = `${inputHeight}px`
-	clearButton.tabIndex = -1
-	clearButton.setAttribute('aria-hidden', 'true')
-	clearButton.type = 'button'
-
-	// SVG icon
-	clearButton.innerHTML = `
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="m18.3 5.71c-.39-.39-1.02-.39-1.41 0l-4.89 4.88-4.89-4.89c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l4.89 4.89-4.89 4.89c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l4.89-4.89 4.89 4.89c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-4.89-4.89 4.89-4.89c.38-.38.38-1.02 0-1.4z" fill="#000"></path>
-    </svg>
-`
-
-	// Clear logic
-	clearButton.addEventListener('mousedown', e => e.preventDefault())
-	clearButton.addEventListener('click', () => {
-		input.value = ''
-		model.value = { id: null, text: '' }
-		root.value = model.value
-
-		lastResults = []
-
-		listbox.innerHTML = ''
-		listbox.style.display = 'none'
-		input.setAttribute('aria-expanded', 'false')
-
-		input.focus()
-	})
-
-	root.appendChild(clearButton)
-
+	// Create search results holder
 	const listbox = document.createElement('ul')
 	listbox.id = listboxId
 	listbox.classList.add('cscb-listbox')
@@ -125,17 +92,90 @@ export default function clubsideComboBox(root, options) {
 	let lastResults = []
 	let searchTimer = null
 
-	// Debounced search trigger
-	function scheduleSearch(text) {
-		if (searchTimer) {
-			clearTimeout(searchTimer)
-		}
+	/**
+	 * Create the clear button, reeserve space for it on the right of input, and attach listeners
+	 */
+	function createClearButton() {
+		const inputRect = input.getBoundingClientRect()
+		const inputHeight = inputRect.height - 8
 
-		searchTimer = setTimeout(() => {
-			runSearch(text)
-		}, delay)
+		// Add padding so text doesn't overlap the clear button
+		input.style.paddingRight = `${inputHeight + 8}px`
+
+		// Create clear button
+		const clearButton = document.createElement('button')
+		clearButton.classList.add('cscb-close')
+		clearButton.style.width = `${inputHeight}px`
+		clearButton.style.height = `${inputHeight}px`
+		clearButton.tabIndex = -1
+		clearButton.setAttribute('aria-hidden', 'true')
+		clearButton.type = 'button'
+
+		// SVG icon
+		clearButton.innerHTML =
+			`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d="m18.3 5.71c-.39-.39-1.02-.39-1.41 0l-4.89 4.88-4.89-4.89c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l4.89 4.89-4.89 4.89c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l4.89-4.89 4.89 4.89c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-4.89-4.89 4.89-4.89c.38-.38.38-1.02 0-1.4z" fill="#000"></path>
+			</svg>`
+
+		// Clear logic
+		clearButton.addEventListener('mousedown', e => e.preventDefault())
+		clearButton.addEventListener('click', () => {
+			input.value = ''
+			model.value = { id: null, text: '' }
+			root.value = model.value
+
+			lastResults = []
+
+			listbox.innerHTML = ''
+			listbox.style.display = 'none'
+			input.setAttribute('aria-expanded', 'false')
+
+			root.dispatchEvent(new Event('change', { bubbles: true }))
+
+			input.focus()
+		})
+
+		root.appendChild(clearButton)
 	}
 
+	/**
+	 * Initialize the ComboBox's value based on options
+	 * @param {ClubsideComboBoxValue} initialValue - value passed through options
+	 * @returns {ClubsideComboBoxModel}
+	 */
+	function createModel(initialValue) {
+		let current = initialValue || { id: null, text: '' }
+
+		return {
+			get value() { return current },
+			set value(v) { current = v }
+		}
+	}
+
+	/**
+	 * Find the closest scrollable overflow parent element
+	 * @param {HTMLElement} el - root element
+	 * @returns {HTMLElement}
+	 */
+	function findScrollParent(el) {
+		while (el && el !== document.body) {
+			const style = getComputedStyle(el)
+
+			if (/(auto|scroll)/.test(style.overflowY) ||
+            /(auto|scroll)/.test(style.overflow)) {
+				return el
+			}
+
+			el = el.parentElement
+		}
+
+		return window
+	}
+
+	/**
+	 * Render search results into listbox
+	 * @param {Object[]} items - array of search result items
+	 */
 	function renderResults(items) {
 		// Clear listbox
 		listbox.innerHTML = ''
@@ -182,9 +222,23 @@ export default function clubsideComboBox(root, options) {
 		input.setAttribute('aria-expanded', 'true')
 	}
 
-	// Execute onSearch and store results
+	/**
+	 * Reposition listbox on parent resize/scroll
+	 */
+	function reposition() {
+		const rect = input.getBoundingClientRect()
+		listbox.style.top = `${rect.bottom + window.scrollY + listOffset}px`
+		listbox.style.left = `${rect.left + window.scrollX}px`
+		listbox.style.width = `${rect.width}px`
+	}
+
+	/**
+	 * Execute onSearch and store results
+	 * @param {string} text - the text to search for
+	 */
 	async function runSearch(text) {
 		try {
+			console.log('Running search...')
 			const results = await onSearch({ text })
 
 			if (!Array.isArray(results)) {
@@ -210,29 +264,59 @@ export default function clubsideComboBox(root, options) {
 		}
 	}
 
+	/**
+	 * Debounced search trigger
+	 * @param {string} text - the text to search for
+	 */
+	function scheduleSearch(text) {
+		if (searchTimer) {
+			clearTimeout(searchTimer)
+		}
+
+		searchTimer = setTimeout(() => {
+			runSearch(text)
+		}, delay)
+	}
+
+	/**
+	 * Set the ComboBox's value to an `<li>` element that was selecvted via keyboard/mouse/touch
+	 * @param {HTMLElement} li - the `<li>` element selected
+	 */
 	function selectItem(li) {
-		const id = li.dataset.id ? Number(li.dataset.id) : null
+		const id = li.dataset.id ? li.dataset.id : null
 		const text = li.dataset.text || li.textContent.trim()
 
 		model.value = { id, text }
 		root.value = model.value
 		input.value = text
 
-		input.setAttribute('aria-activedescendant', '')
+		input.removeAttribute('aria-activedescendant')
 		input.setAttribute('aria-expanded', 'false')
+
+		// console.log({ message: 'LI selected, model.value set', model })
+
+		root.dispatchEvent(new Event('change', { bubbles: true }))
 
 		listbox.style.display = 'none'
 		input.focus()
 	}
 
-	// Public value API
-	Object.defineProperty(root, 'value', {
-		get() { return model.value },
-		set(v) {
-			model.value = v
-			input.value = v.text
-		}
-	})
+	/**
+	 * Wait for an element to be visible in the DOM
+	 * @param {HTMLElement} el - the element to observe
+	 * @param {Function} callback - function to execute when the observer is triggered
+	 */
+	function waitForVisibility(el, callback) {
+		const ro = new ResizeObserver(entries => {
+			const { width, height } = entries[0].contentRect
+			if (width > 0 && height > 0) {
+				ro.disconnect()
+				callback()
+			}
+		})
+
+		ro.observe(el)
+	}
 
 	// Initialize input with initial value (if provided)
 	if (value && typeof value.text === 'string') {
@@ -244,14 +328,18 @@ export default function clubsideComboBox(root, options) {
 			// Close listbox
 			listbox.style.display = 'none'
 			input.setAttribute('aria-expanded', 'false')
-			input.setAttribute('aria-activedescendant', '')
+			input.removeAttribute('aria-activedescendant')
 			// Allow normal tabbing
 			return
 		}
 
 		if (e.key === 'ArrowDown') {
 			const items = listbox.querySelectorAll('li')
-			if (!items.length) return
+			if (!items.length && showOnEmpty) {
+				runSearch('')
+			} else if (!items.length) {
+				return
+			}
 
 			e.preventDefault()
 			if (listbox.style.display === 'none') listbox.style.display = 'flex'
@@ -288,6 +376,7 @@ export default function clubsideComboBox(root, options) {
 		if (match) {
 			model.value = { id: match.id, text: match.text }
 			root.value = model.value
+			root.dispatchEvent(new Event('change', { bubbles: true }))
 		}
 	})
 
@@ -301,25 +390,7 @@ export default function clubsideComboBox(root, options) {
 		const li = e.target.closest('li')
 		if (!li) return
 
-		const id = li.dataset.id ? Number(li.dataset.id) : null
-		const text = li.dataset.text || li.textContent.trim()
-
-		// Update model
-		model.value = { id, text }
-		root.value = model.value
-
-		// Update input
-		input.value = text
-
-		// Update ARIA
-		input.setAttribute('aria-activedescendant', li.id)
-		input.setAttribute('aria-expanded', 'false')
-
-		// Close listbox
-		listbox.style.display = 'none'
-
-		// Restore focus
-		input.focus()
+		selectItem(li)
 	})
 
 	listbox.addEventListener('keydown', e => {
@@ -343,7 +414,7 @@ export default function clubsideComboBox(root, options) {
 				if (index === 0) {
 					// Return focus to input
 					input.focus()
-					input.setAttribute('aria-activedescendant', '')
+					input.removeAttribute('aria-activedescendant')
 				} else {
 					const prev = index - 1
 					items[prev].focus()
@@ -357,18 +428,19 @@ export default function clubsideComboBox(root, options) {
 				break
 
 			case 'Escape':
+				e.stopPropagation()
 				e.preventDefault()
 				listbox.style.display = 'none'
 				input.setAttribute('aria-expanded', 'false')
 				input.focus()
-				input.setAttribute('aria-activedescendant', '')
+				input.removeAttribute('aria-activedescendant')
 				break
 
 			case 'Tab':
 				// Close listbox
 				listbox.style.display = 'none'
 				input.setAttribute('aria-expanded', 'false')
-				input.setAttribute('aria-activedescendant', '')
+				input.removeAttribute('aria-activedescendant')
 
 				// Return focus to input *just long enough* for tabbing to continue
 				input.focus()
@@ -392,33 +464,28 @@ export default function clubsideComboBox(root, options) {
 		// Otherwise → close
 		listbox.style.display = 'none'
 		input.setAttribute('aria-expanded', 'false')
-		input.setAttribute('aria-activedescendant', '')
+		input.removeAttribute('aria-activedescendant')
 	})
+
+	const scrollParent = findScrollParent(root)
+
+	scrollParent.addEventListener('scroll', reposition)
+	window.addEventListener('resize', reposition)
+
+	new ResizeObserver(reposition).observe(input)
+
+	// Public value API
+	Object.defineProperty(root, 'value', {
+		get() { return model.value },
+		set(v) {
+			model.value = v
+			input.value = v.text
+		}
+	})
+
+	Object.defineProperty(root, 'input', {
+		value: input
+	})
+
+	return root
 }
-
-/*
-function findScrollParent(el) {
-    while (el && el !== document.body) {
-        const style = getComputedStyle(el)
-        if (/(auto|scroll)/.test(style.overflowY)) {
-            return el
-        }
-        el = el.parentElement
-    }
-    return window
-}
-
-const scrollParent = findScrollParent(root)
-
-scrollParent.addEventListener('scroll', reposition)
-window.addEventListener('resize', reposition)
-
-new ResizeObserver(reposition).observe(input)
-
-function reposition() {
-    const rect = input.getBoundingClientRect()
-    listbox.style.top = `${rect.bottom + window.scrollY}px`
-    listbox.style.left = `${rect.left + window.scrollX}px`
-    listbox.style.width = `${rect.width}px`
-}
-*/

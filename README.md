@@ -59,6 +59,12 @@ Additional properties are allowed and can be used in `onResults` for formatting.
 A function that returns an array of elements that will be wrapped in `<li>` elements for display.
 This can be simple (just the `text` values) or complex (images, markup, etc.).
 
+### showOnEmpty
+
+**Optional.**
+Default: `false`.
+Whether or not to allow showing of search results when nothing has been entered. Allows the Down Arrow to act like a traditional `<select>` element showing all choices.
+
 ### delay
 
 **Optional.**
@@ -70,6 +76,18 @@ The debounce delay before `onSearch` is executed after typing stops.
 **Optional.**
 Default: `0`.
 Vertical pixel offset between the `<input>` and the listbox.
+
+### required
+
+**Optional.**
+Default: `false`.
+Whether the internal `<input>` element should have the `required` attribute for form validation.
+
+### placeholder
+
+**Optional.**
+Default: `null`.
+Whether the internal `<input>` element should have the `placeholder` attribute for display when `value` is empty.
 
 ### value
 

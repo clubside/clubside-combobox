@@ -1,0 +1,28 @@
+{
+  "name": "clubside-combobox",
+  "version": "1.0.0",
+  "description": "A lightweight, ARIA-correct vanilla JavaScript combobox component with full keyboard navigation, outside-click closing, and portal-based listbox rendering.",
+  "main": "/src/js/clubside-combobox.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "combobox",
+    "aria",
+    "accessibility",
+    "vanilla-js",
+    "dropdown",
+    "autocomplete",
+    "listbox",
+    "ui-component",
+    "javascript"
+  ],
+  "author": "Chris Rowley",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^10.9.1",
+    "globals": "^17.11.0"
+  }
+}

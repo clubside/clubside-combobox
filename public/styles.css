@@ -1,0 +1,151 @@
+:root {
+	--color-accent: #0ab69f;
+	--color-bg: #dceeea;
+	--color-bg-alt: #fff;
+	--color-text: #0c0d0e;
+	--color-text-muted: #65686c;
+	--color-border: #e5e5e5;
+	--color-hover: #f2f2f2;
+	--color-item-hover: #CEACDC;
+	--oklab-02: #ECEDEE;
+	--oklab-03: #E4E5E6;
+	--oklab-04: #DBDCDD;
+	--oklab-05: #D2D3D4;
+	--oklab-06: #CACBCC;
+	--oklab-07: #C1C2C4;
+	--oklab-08: #B9BABB;
+	--oklab-09: #B1B2B3;
+	--oklab-10: #A9AAAB;
+	--oklab-11: #A0A1A3;
+	--oklab-12: #98999B;
+	--oklab-13: #909193;
+	--oklab-14: #888A8B;
+	--oklab-15: #818283;
+	--oklab-16: #797A7B;
+	--oklab-17: #717273;
+	--oklab-18: #6A6B6C;
+	--oklab-19: #626364;
+	--oklab-20: #5B5C5D;
+	--oklab-21: #535556;
+	--oklab-22: #4C4D4F;
+	--oklab-23: #454647;
+	--oklab-24: #3E3F41;
+	--oklab-25: #37393A;
+	--oklab-26: #313233;
+	--oklab-27: #2A2B2C;
+	--oklab-28: #242526;
+	--oklab-29: #1E1F20;
+	--oklab-30: #18191A;
+	--oklab-31: #121314;
+	--cscb-border-color: #e5e5e5;
+	--cscb-listbox-padding: 0;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-size: 1rem;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+label, button, input, textarea, select, option {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+	gap: 0.25rem;
+}
+
+label.fixed {
+    flex-grow: 0;
+}
+
+label > span {
+    font-size: 90%;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+input,
+button.button {
+	appearance: none;
+    font-size: 16px;
+    font-size: max(16px, 1em);
+    font-family: inherit;
+    padding: 0.25em 0.5em;
+    color: var(--color-text);
+    background-color: var(--color-bg-alt);
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    transition: 220ms all ease-in-out;
+    max-width: 100%;
+	outline: 2px solid transparent;
+}
+
+input,
+button.button {
+    line-height: 1;
+	height: 2.25em;
+}
+
+input {
+	cursor: text;
+	width: 100%;
+}
+
+button.button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	outline: none;
+	cursor: pointer;
+}
+
+button.button img {
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+}
+
+input:focus,
+button.button:focus {
+    border-color: var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-accent);
+    outline: 2px solid transparent;
+}
+
+input:hover,
+button.button:hover {
+    border-color: var(--color-accent);
+}
+
+input:read-only,
+input:disabled {
+	background-color: var(--oklab-03);
+}
+
+input:read-only:focus,
+input:disabled:focus {
+	border-color: var(--color-border);
+	box-shadow: none;
+	outline: none;
+}
+
+input:read-only:hover,
+input:disabled:hover {
+	border-color: var(--color-border);
+}
+
+.button-bar {
+	margin: 0.5rem 0;
+}

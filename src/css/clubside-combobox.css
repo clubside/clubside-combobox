@@ -1,0 +1,47 @@
+.cscb-close {
+	box-sizing: border-box;
+	appearance: none;
+	border: none;
+	outline: none;
+	background: transparent;
+	padding: 0;
+	margin: 0;
+	cursor: pointer;
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	transition: transform 0.3s ease;
+}
+
+.cscb-close:hover {
+	transform: rotate(90deg);
+}
+
+.cscb-listbox {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	gap: var(--cscb-listbox-gap, 0);
+	list-style: none;
+	color: var(--cscb-foreground-color, black);
+	background-color: var(--cscb-background-color, white);
+	border: var(--cscb-border-width, 1px) solid var(--cscb-border-color, black);
+	margin: 0;
+	padding: var(--cscb-listbox-padding, 0);
+	max-height: var(--cscb-listbox-height, 10lh);
+	overflow-y: auto;
+	z-index: calc(infinity);
+}
+
+.cscb-listbox li {
+	padding: var(--cscb-listitem-padding-horizontal, 6px) var(--cscb-listitem-padding-vertical, 4px);
+	cursor: pointer;
+}
+
+.cscb-listbox li:hover,
+.cscb-listbox li:focus,
+.cscb-listbox li:active {
+	color: var(--cscb-hover-foreground-color, black);
+	background-color: var(--cscb-hover-background-color, #ddd);
+	outline: none;
+}

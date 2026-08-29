@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "liveServer.settings.root": "/",
+    "liveServer.settings.port": 5500,
+    "terminal.integrated.shellIntegration.enabled": false,
+
+    // Disable Copilot everywhere in this workspace
+    "github.copilot.enable": {
+      "*": false,
+      "terminal": false
+    }
+  }
+}
